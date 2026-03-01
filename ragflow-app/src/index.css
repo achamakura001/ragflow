@@ -995,3 +995,141 @@ code, .mono { font-family: 'DM Mono', monospace; }
   background: rgba(255,255,255,0.08);
   color: #fff;
 }
+
+
+/* ================================================
+   VECTOR STORES PAGE
+   ================================================ */
+
+/* Two-column layout */
+.vs-layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.vs-left  { min-width: 0; }
+.vs-right { min-width: 0; }
+
+/* DB type card grid inside left panel */
+.vs-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+/* Loading / empty states inside panels */
+.vs-loading { padding: 20px; color: var(--muted); font-size: 13px; }
+.vs-empty-conns {
+  padding: 16px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Section sub-label above dynamic fields */
+.vs-section-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  margin: 20px 0 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--surface2);
+}
+
+/* Form action row */
+.vs-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+/* Field helpers */
+.field-required { color: #ef4444; margin-left: 2px; }
+.field-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+/* Connection cards */
+.conn-list { display: flex; flex-direction: column; gap: 12px; }
+
+.conn-card {
+  border: 1px solid var(--surface2);
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: var(--surface);
+}
+.conn-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.conn-card-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+}
+.conn-card-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.conn-card-meta code {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+}
+.conn-card-props {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--surface2);
+  padding-top: 10px;
+}
+.conn-prop-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+}
+.conn-prop-key {
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 11.5px;
+}
+.conn-prop-val {
+  color: var(--ink);
+  font-family: 'DM Mono', monospace;
+  font-size: 11.5px;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Test result banner */
+.test-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+}
+.test-banner-ok   { background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46; }
+.test-banner-fail { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; }
+.test-banner-icon { font-size: 18px; font-weight: 700; line-height: 1.2; }
+.test-banner-title { font-weight: 700; margin-bottom: 2px; }
+.test-banner-msg   { font-size: 12.5px; opacity: 0.8; }
+
+/* Badge extras (used in conn-card env badge) */
+.badge-blue { background: #dbeafe; color: #1d4ed8; }
+.badge-red  { background: #fee2e2; color: #b91c1c; }
+.badge-gray { background: var(--surface2); color: var(--muted); }
