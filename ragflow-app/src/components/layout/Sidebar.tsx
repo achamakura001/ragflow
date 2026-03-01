@@ -3,6 +3,7 @@
  */
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 interface NavItem { path: string; icon: string; label: string; badge?: string; }
 
@@ -41,6 +42,13 @@ const NavGroup: React.FC<{ label: string; items: NavItem[] }> = ({ label, items 
 
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
+  const { clearToken } = useAuth();
+
+  function handleLogout() {
+    clearToken();
+    navigate('/', { replace: true });
+  }
+
   return (
     <aside className="sidebar">
       <div className="sidebar-logo" onClick={() => navigate('/dashboard')}>
@@ -58,6 +66,9 @@ export const Sidebar: React.FC = () => {
             <div className="user-role">Pipeline Owner</div>
           </div>
         </div>
+        <button className="logout-btn" onClick={handleLogout} title="Sign out">
+          ⏻ Logout
+        </button>
       </div>
     </aside>
   );

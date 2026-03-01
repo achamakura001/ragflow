@@ -972,3 +972,26 @@ code, .mono { font-family: 'DM Mono', monospace; }
   padding: 8px 12px;
   border-radius: 6px;
 }
+
+/* Logout button in sidebar footer */
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.55);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  text-align: left;
+}
+.logout-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
