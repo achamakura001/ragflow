@@ -7,7 +7,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 interface NavItem { path: string; icon: string; label: string; badge?: string; }
 
 const WORKSPACE: NavItem[] = [
-  { path: '/',              icon: '▦',  label: 'Dashboard' },
+  { path: '/dashboard',    icon: '▦',  label: 'Dashboard' },
   { path: '/pipelines',    icon: '⟶', label: 'Pipelines', badge: '6' },
   { path: '/pipelines/new', icon: '+',  label: 'New Pipeline' },
 ];
@@ -28,7 +28,7 @@ const NavGroup: React.FC<{ label: string; items: NavItem[] }> = ({ label, items 
       <NavLink
         key={item.path}
         to={item.path}
-        end={item.path === '/'}
+        end={item.path === '/dashboard'}
         className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}
       >
         <span style={{ opacity: 0.8, fontSize: 16, lineHeight: 1 }}>{item.icon}</span>
@@ -43,7 +43,7 @@ export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   return (
     <aside className="sidebar">
-      <div className="sidebar-logo" onClick={() => navigate('/')}>
+      <div className="sidebar-logo" onClick={() => navigate('/dashboard')}>
         <div className="logo-mark">R</div>
         RAGFlow
       </div>
