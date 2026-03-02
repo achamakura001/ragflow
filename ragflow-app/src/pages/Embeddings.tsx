@@ -156,7 +156,12 @@ const ConfigCard: React.FC<ConfigCardProps> = ({ config, onEdit }) => (
 );
 
 // ── Models panel ──────────────────────────────────────────────────────────────
-const ModelsPanel: React.FC<{ models: EmbeddingModel[] }> = ({ models }) => (
+interface ModelsPanelProps {
+  models: EmbeddingModel[];
+  selectedModel: string;
+  onSelect: (id: string) => void;
+}
+const ModelsPanel: React.FC<ModelsPanelProps> = ({ models, selectedModel, onSelect }) => (
   <div className="card" style={{ marginTop: 20 }}>
     <div className="card-header">
       <span className="card-title">Available Models</span>
@@ -165,16 +170,25 @@ const ModelsPanel: React.FC<{ models: EmbeddingModel[] }> = ({ models }) => (
     {models.length === 0 ? (
       <div className="vs-empty-conns">No models returned by provider.</div>
     ) : (
-      <div className="emb-models-grid">
-        {models.map((m) => (
-          <div key={m.id} className="emb-model-chip">
-            <div className="emb-model-id">{m.id}</div>
-            {m.display_name && m.display_name !== m.id && (
-              <div className="emb-model-name">{m.display_name}</div>
-            )}
-            {m.description && <div className="emb-model-desc">{m.description}</div>}
+      <div className="form-group" style={{ marginBottom: 0 }}>
+        <label className="form-label">Select Model</label>
+        <select
+          className="form-input"
+          value={selectedModel}
+          onChange={(e) => onSelect(e.target.value)}
+        >
+          <option value="">— Choose a model —</option>
+          {models.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.display_name && m.display_name !== m.id ? `${m.display_name} (${m.id})` : m.id}
+            </option>
+          ))}
+        </select>
+        {selectedModel && (
+          <div className="form-sublabel" style={{ marginTop: 6 }}>
+            Selected model ID: <code>{selectedModel}</code>
           </div>
-        ))}
+        )}
       </div>
     )}
   </div>
@@ -208,6 +222,7 @@ export const Embeddings: React.FC = () => {
   const [testResult, setTestResult] = useState<TestBannerProps | null>(null);
   const [fetchingModels, setFetchingModels] = useState(false);
   const [models, setModels] = useState<EmbeddingModel[] | null>(null);
+  const [selectedModel, setSelectedModel] = useState<string>('');
 
   // Load providers on mount
   useEffect(() => {
@@ -233,6 +248,7 @@ export const Embeddings: React.FC = () => {
     setSavedConfigId(null);
     setTestResult(null);
     setModels(null);
+    setSelectedModel('');
     setEditingConfig(null);
   }
 
@@ -257,6 +273,7 @@ export const Embeddings: React.FC = () => {
     setSavedConfigId(config.id);
     setTestResult(null);
     setModels(null);
+    setSelectedModel('');
     // Auto-load models for the selected config
     setFetchingModels(true);
     getModels(config.id)
@@ -305,6 +322,8 @@ export const Embeddings: React.FC = () => {
         });
       }
       setSavedConfigId(saved.id);
+      setModels(null);
+      setSelectedModel('');
       loadConfigs();
     } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : 'Failed to save config');
@@ -518,7 +537,13 @@ export const Embeddings: React.FC = () => {
                     <div className="vs-loading">Fetching models…</div>
                   </div>
                 )}
-                {!fetchingModels && models !== null && <ModelsPanel models={models} />}
+                {!fetchingModels && models !== null && (
+                  <ModelsPanel
+                    models={models}
+                    selectedModel={selectedModel}
+                    onSelect={setSelectedModel}
+                  />
+                )}
               </>
             )}
           </div>
