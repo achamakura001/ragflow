@@ -42,7 +42,10 @@ export const Step7Review: React.FC<Props> = ({ form, onConfirm, confirming }) =>
       <div style={{ fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--muted)', marginBottom: 8 }}>
         Pipeline Configuration
       </div>
-      <Row label="Documents"      value={`${form.documents.length} file(s)`} />
+      <Row label="Document Source" value={form.docSourceType
+        ? `${form.docSourceType}${form.docSourceConfig['bucket_name'] ? ` · ${form.docSourceConfig['bucket_name']}` : form.docSourceConfig['container_name'] ? ` · ${form.docSourceConfig['container_name']}` : form.docSourceConfig['path'] ? ` · ${form.docSourceConfig['path']}` : ''}`
+        : undefined} />
+      <Row label="Documents"      value={form.docSourceType === 'local' && form.documents.length > 0 ? `${form.documents.length} file(s)` : undefined} />
       <Row label="Chunking"       value={form.chunkingStrategySlug
         ? `${form.chunkingStrategySlug} · ${form.chunkSize} chars · ${form.chunkOverlap} overlap`
         : undefined} />

@@ -123,7 +123,9 @@ export interface UploadedDocument {
 export type PipelineEnv = 'dev' | 'qa' | 'perf' | 'prod';
 export type PipelineFrequency = 'daily' | 'weekly' | 'monthly';
 
-/** Wizard form data collected across all 7 builder steps */
+export type DocumentSourceType = 'gcs' | 'azure' | 'local';
+
+/** Step 2 – Document source selection */
 export interface PipelineFormData {
   // Step 1 – Identity & schedule
   name: string;
@@ -134,8 +136,10 @@ export interface PipelineFormData {
   scheduled_time: string;   // HH:MM local
   start_date: string;       // YYYY-MM-DD
 
-  // Step 2 – Documents
-  documents: UploadedDocument[];
+  // Step 2 – Document source
+  docSourceType: DocumentSourceType | '';
+  docSourceConfig: Record<string, string>;   // type-specific config fields
+  documents: UploadedDocument[];             // kept for local file display
 
   // Step 3 – Chunking (API-driven)
   chunkingStrategyId: number | null;

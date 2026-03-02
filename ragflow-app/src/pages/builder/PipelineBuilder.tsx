@@ -28,7 +28,7 @@ const STEPS = ['Name & Schedule', 'Documents', 'Chunking', 'Embedding', 'Vector 
 const DEFAULT: PipelineFormData = {
   name: '', description: '', tags: [],
   environment: 'dev', frequency: '', scheduled_time: '', start_date: '',
-  documents: [],
+  docSourceType: '', docSourceConfig: {}, documents: [],
   chunkingStrategyId: null, chunkingStrategySlug: '', chunkSize: 512, chunkOverlap: 64, customSeparators: [],
   embeddingProviderSlug: '', embeddingConfigEnv: '', embeddingConfigId: '', embeddingModel: '',
   vectorDbTypeSlug: '', vectorDbConnectionId: '',
@@ -40,7 +40,9 @@ const DEFAULT: PipelineFormData = {
 function buildStepBody(step: number, form: PipelineFormData): Record<string, unknown> {
   switch (step) {
     case 1: return {
-      document_source: { type: 'local', config: { files: form.documents.map(d => d.name) } },
+      document_source: form.docSourceType
+        ? { type: form.docSourceType, config: form.docSourceConfig }
+        : null,
     };
     case 2: return {
       chunking: form.chunkingStrategyId != null ? {

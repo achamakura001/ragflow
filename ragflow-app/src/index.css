@@ -1258,3 +1258,33 @@ code, .mono { font-family: 'DM Mono', monospace; }
   font-size: 13px;
   color: #92400e;
 }
+
+
+/* Document source dropzone */
+.doc-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 36px 20px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 13px;
+  gap: 8px;
+  background: var(--surface);
+  transition: border-color 0.15s;
+}
+.doc-dropzone:hover { border-color: var(--accent); }
+
+.doc-file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: white;
+  font-size: 13px;
+}
