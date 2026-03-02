@@ -6,7 +6,7 @@
  *   Steps 2-6 → Continue: POST /api/v1/pipelines/{id} (update draft)
  *   Step 7 → Confirm: POST /api/v1/pipelines/{id}/confirm
  */
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Step1Name }        from './steps/Step1Name';
@@ -36,7 +36,7 @@ const DEFAULT: PipelineFormData = {
   _pipelineId: null,
 };
 
-/** Build the API body from form data for steps 2-6 */
+/** Build the API body from form data for each step */
 function buildStepBody(step: number, form: PipelineFormData): Record<string, unknown> {
   switch (step) {
     case 1: return {
@@ -74,31 +74,34 @@ export const PipelineBuilder: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
 
-  const update = (patch: Partial<PipelineFormData>) => setForm(f => ({ ...f, ...patch }));
+  // Always-current ref so async handlers never read stale form values
+  const formRef = useRef(form);
+  const update = (patch: Partial<PipelineFormData>) =>
+    setForm(f => { const next = { ...f, ...patch }; formRef.current = next; return next; });
 
-  const back = () => { setError(''); setStep(s => Math.max(0, s - 1)); };
+  const goToStep = (target: number) => { setError(''); setStep(target); };
+  const back     = () => goToStep(Math.max(0, step - 1));
 
   async function handleContinue() {
     setError('');
     setSaving(true);
+    const currentForm = formRef.current;   // always fresh
     try {
       if (step === 0) {
-        // Step 1: create draft
         const draft = await createPipelineDraft({
-          name: form.name,
-          description: form.description || null,
-          tags: form.tags,
-          environment: form.environment,
-          frequency: form.frequency || null,
-          scheduled_time: form.scheduled_time || null,
-          start_date: form.start_date || null,
+          name: currentForm.name,
+          description: currentForm.description || null,
+          tags: currentForm.tags,
+          environment: currentForm.environment,
+          frequency: currentForm.frequency || null,
+          scheduled_time: currentForm.scheduled_time || null,
+          start_date: currentForm.start_date || null,
         });
         update({ _pipelineId: draft.id });
-      } else if (form._pipelineId) {
-        // Steps 1-5: update draft
-        const body = buildStepBody(step, form);
+      } else if (currentForm._pipelineId) {
+        const body = buildStepBody(step, currentForm);
         if (Object.keys(body).length > 0) {
-          await updatePipelineDraft(form._pipelineId, body);
+          await updatePipelineDraft(currentForm._pipelineId, body);
         }
       }
       setStep(s => Math.min(STEPS.length - 1, s + 1));
@@ -110,11 +113,12 @@ export const PipelineBuilder: React.FC = () => {
   }
 
   async function handleConfirm() {
-    if (!form._pipelineId) return;
+    const currentForm = formRef.current;
+    if (!currentForm._pipelineId) return;
     setError('');
     setSaving(true);
     try {
-      await confirmPipeline(form._pipelineId);
+      await confirmPipeline(currentForm._pipelineId);
       navigate('/pipelines');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to confirm pipeline');
@@ -124,15 +128,26 @@ export const PipelineBuilder: React.FC = () => {
   }
 
   const isFinalStep = step === STEPS.length - 1;
+  // The highest step the user has reached (allows clicking back on indicators)
+  const [maxStep, setMaxStep] = useState(0);
+  React.useEffect(() => {
+    if (step > maxStep) setMaxStep(step);
+  }, [step]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="wizard">
+      {/* ── Step indicators ── */}
       <div className="wizard-steps">
         {STEPS.map((label, i) => {
           const state = i < step ? 'done' : i === step ? 'active' : 'pending';
+          const clickable = i < step || i <= maxStep;
           return (
             <React.Fragment key={label}>
-              <div className={`step-item ${state}`}>
+              <div
+                className={`step-item ${state}${clickable ? ' step-clickable' : ''}`}
+                onClick={() => clickable && goToStep(i)}
+                title={clickable ? `Go to: ${label}` : undefined}
+              >
                 <div className="step-num">{i < step ? '✓' : i + 1}</div>
                 <div className="step-label">{label}</div>
               </div>
@@ -142,6 +157,7 @@ export const PipelineBuilder: React.FC = () => {
         })}
       </div>
 
+      {/* ── Step content ── */}
       <div className="wizard-content">
         {step === 0 && <Step1Name        form={form} update={update} />}
         {step === 1 && <Step2Documents   form={form} update={update} />}
@@ -149,11 +165,12 @@ export const PipelineBuilder: React.FC = () => {
         {step === 3 && <Step4Embedding   form={form} update={update} />}
         {step === 4 && <Step5VectorStore form={form} update={update} />}
         {step === 5 && <Step6Testing     form={form} update={update} />}
-        {step === 6 && <Step7Review      form={form} onConfirm={handleConfirm} confirming={saving} />}
+        {step === 6 && <Step7Review      form={form} onConfirm={handleConfirm} confirming={saving} goToStep={goToStep} />}
       </div>
 
       {error && <div className="wizard-error">{error}</div>}
 
+      {/* ── Footer nav (hidden on Review page – it has its own Confirm button) ── */}
       {!isFinalStep && (
         <div className="wizard-footer">
           <Button variant="ghost" onClick={step === 0 ? () => navigate('/pipelines') : back}>
