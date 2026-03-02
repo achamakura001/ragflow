@@ -120,22 +120,45 @@ export interface UploadedDocument {
   status: 'uploaded' | 'processing' | 'ready' | 'error';
 }
 
+export type PipelineEnv = 'dev' | 'qa' | 'perf' | 'prod';
+export type PipelineFrequency = 'daily' | 'weekly' | 'monthly';
+
 /** Wizard form data collected across all 7 builder steps */
 export interface PipelineFormData {
+  // Step 1 – Identity & schedule
   name: string;
   description: string;
   tags: string[];
+  environment: PipelineEnv;
+  frequency: PipelineFrequency | '';
+  scheduled_time: string;   // HH:MM local
+  start_date: string;       // YYYY-MM-DD
+
+  // Step 2 – Documents
   documents: UploadedDocument[];
-  chunkingStrategy: ChunkingStrategy;
+
+  // Step 3 – Chunking (API-driven)
+  chunkingStrategyId: number | null;
+  chunkingStrategySlug: string;
   chunkSize: number;
   chunkOverlap: number;
   customSeparators: string[];
-  embeddingProvider: string;
+
+  // Step 4 – Embedding (API-driven)
+  embeddingProviderSlug: string;
+  embeddingConfigEnv: PipelineEnv | '';
+  embeddingConfigId: string;
   embeddingModel: string;
-  embeddingApiKey: string;
-  vectorStore: string;
-  vectorStoreConfig: Record<string, string>;
+
+  // Step 5 – Vector store (API-driven)
+  vectorDbTypeSlug: string;
+  vectorDbConnectionId: string;
+
+  // Step 6 – Testing
   testQuery: string;
   topK: number;
   similarityThreshold: number;
+
+  // Internal – draft pipeline ID returned from the API after Step 1 PUT
+  _pipelineId: string | null;
 }

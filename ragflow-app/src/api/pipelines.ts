@@ -6,7 +6,7 @@
 
 import { apiFetch, USE_MOCK, mockDelay } from './client';
 import { mockPipelines } from './mock/pipelines';
-import type { Pipeline, PipelineFormData, EmbeddingProvider, VectorStoreProvider } from '../types';
+import type { Pipeline, PipelineFormData } from '../types';
 
 /** Fetch all pipelines for the current tenant. */
 export async function getPipelines(): Promise<Pipeline[]> {
@@ -36,10 +36,10 @@ export async function createPipeline(data: PipelineFormData): Promise<Pipeline> 
       id: `pip_${Date.now()}`,
       name: data.name,
       description: data.description,
-      embeddingProvider: (data.embeddingProvider as EmbeddingProvider) || 'openai',
+      embeddingProvider: 'openai',
       embeddingModel: data.embeddingModel,
-      vectorStore: (data.vectorStore as VectorStoreProvider) || 'pinecone',
-      chunkingStrategy: data.chunkingStrategy,
+      vectorStore: 'pinecone',
+      chunkingStrategy: 'fixed',
       chunkSize: data.chunkSize,
       overlap: data.chunkOverlap,
       topK: data.topK,
