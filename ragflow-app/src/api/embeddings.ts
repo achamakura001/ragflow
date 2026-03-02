@@ -136,13 +136,18 @@ export function testConfig(id: string): Promise<TestResult> {
   return apiFetch(`/api/v1/embeddings/configs/${id}/test`, { method: 'POST' });
 }
 
-/** Fetch the list of models available for a saved config. */
+/** Fetch the list of models available for a saved config.
+ *  API returns: { success, provider_slug, models: EmbeddingModel[] }
+ */
 export function getModels(id: string): Promise<{ items: EmbeddingModel[]; total?: number }> {
   return apiFetch<unknown>(`/api/v1/embeddings/configs/${id}/models`)
     .then((data) => {
-      // API may return { items: [...] } or a plain array
-      if (Array.isArray(data)) return { items: data as EmbeddingModel[], total: (data as EmbeddingModel[]).length };
-      const d = data as { items?: EmbeddingModel[]; total?: number };
-      return { items: d.items ?? [], total: d.total };
+      if (Array.isArray(data)) {
+        return { items: data as EmbeddingModel[], total: (data as EmbeddingModel[]).length };
+      }
+      const d = data as { models?: EmbeddingModel[]; items?: EmbeddingModel[]; total?: number };
+      // API shape: { success, provider_slug, models: [...] }
+      const list = d.models ?? d.items ?? [];
+      return { items: list, total: list.length };
     });
 }

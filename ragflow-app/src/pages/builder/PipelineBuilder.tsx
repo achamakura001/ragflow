@@ -1,13 +1,17 @@
 /**
- * PipelineBuilder – 7-step wizard for creating a new RAG pipeline.
+ * PipelineBuilder – 7-step wizard for creating OR editing a RAG pipeline.
  *
- * Persistence strategy:
- *   Step 1 → Continue: PUT /api/v1/pipelines          (create draft, get pipeline_id)
- *   Steps 2-6 → Continue: POST /api/v1/pipelines/{id} (update draft)
- *   Step 7 → Confirm: POST /api/v1/pipelines/{id}/confirm
+ * Create mode: /pipelines/new
+ *   Step 1 → Continue: PUT /api/v1/pipelines  (creates draft, gets pipeline_id)
+ *
+ * Edit mode: /pipelines/:id/edit
+ *   Loads existing pipeline data on mount, all steps POST to existing pipeline_id
+ *
+ * Steps 2-6 → Continue: POST /api/v1/pipelines/{id}
+ * Step 7 → Confirm: POST /api/v1/pipelines/{id}/confirm
  */
-import React, { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Step1Name }        from './steps/Step1Name';
 import { Step2Documents }   from './steps/Step2Documents';
@@ -20,6 +24,7 @@ import {
   createPipelineDraft,
   updatePipelineDraft,
   confirmPipeline,
+  type PipelineRead,
 } from '../../api/pipelinesApi';
 import type { PipelineFormData } from '../../types';
 
@@ -67,17 +72,71 @@ function buildStepBody(step: number, form: PipelineFormData): Record<string, unk
   }
 }
 
+/** Map a PipelineRead from the API into our local form shape */
+function pipelineToForm(p: PipelineRead): PipelineFormData {
+  return {
+    name: p.name,
+    description: p.description ?? '',
+    tags: p.tags ?? [],
+    environment: (p.environment as PipelineFormData['environment']) ?? 'dev',
+    frequency: p.frequency ?? '',
+    scheduled_time: p.scheduled_time ?? '',
+    start_date: p.start_date ?? '',
+    docSourceType: p.source_type ?? '',
+    docSourceConfig: (p.source_config as Record<string, string>) ?? {},
+    documents: [],
+    chunkingStrategyId: p.chunking_strategy_id ?? null,
+    chunkingStrategySlug: p.chunking_strategy_name ?? '',
+    chunkSize: p.chunk_size ?? 512,
+    chunkOverlap: p.chunk_overlap ?? 64,
+    customSeparators: [],
+    embeddingProviderSlug: '',
+    embeddingConfigEnv: '',
+    embeddingConfigId: p.embedding_config_id ?? '',
+    embeddingModel: p.embedding_model ?? '',
+    vectorDbTypeSlug: '',
+    vectorDbConnectionId: p.vector_db_config_id ?? '',
+    testQuery: '', topK: 5, similarityThreshold: 0.7,
+    _pipelineId: p.id,
+  };
+}
+
 export const PipelineBuilder: React.FC = () => {
   const navigate = useNavigate();
-  const [step, setStep]     = useState(0);
-  const [form, setForm]     = useState<PipelineFormData>(DEFAULT);
-  const [saving, setSaving] = useState(false);
-  const [error, setError]   = useState('');
+  const { id: editId } = useParams<{ id?: string }>();
+  const isEditMode = Boolean(editId);
+
+  const [step, setStep]         = useState(0);
+  const [form, setForm]         = useState<PipelineFormData>(DEFAULT);
+  const [saving, setSaving]     = useState(false);
+  const [error, setError]       = useState('');
+  const [loadingEdit, setLoadingEdit] = useState(isEditMode);
 
   // Always-current ref so async handlers never read stale form values
   const formRef = useRef(form);
   const update = (patch: Partial<PipelineFormData>) =>
     setForm(f => { const next = { ...f, ...patch }; formRef.current = next; return next; });
+
+  // In edit mode, fetch the existing pipeline and pre-populate the form
+  useEffect(() => {
+    if (!editId) return;
+    const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000';
+    const token = localStorage.getItem('ragflow_token');
+    fetch(`${BASE}/api/v1/pipelines/${editId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+      .then(r => r.json())
+      .then((p: PipelineRead) => {
+        const populated = pipelineToForm(p);
+        setForm(populated);
+        formRef.current = populated;
+      })
+      .catch(e => setError(`Failed to load pipeline: ${e.message}`))
+      .finally(() => setLoadingEdit(false));
+  }, [editId]);
 
   const goToStep = (target: number) => { setError(''); setStep(target); };
   const back     = () => goToStep(Math.max(0, step - 1));
@@ -87,7 +146,8 @@ export const PipelineBuilder: React.FC = () => {
     setSaving(true);
     const currentForm = formRef.current;   // always fresh
     try {
-      if (step === 0) {
+      if (step === 0 && !isEditMode) {
+        // Create mode: Step 1 creates the draft
         const draft = await createPipelineDraft({
           name: currentForm.name,
           description: currentForm.description || null,
@@ -99,6 +159,7 @@ export const PipelineBuilder: React.FC = () => {
         });
         update({ _pipelineId: draft.id });
       } else if (currentForm._pipelineId) {
+        // Edit mode (all steps) or create mode (steps 2-6): update draft
         const body = buildStepBody(step, currentForm);
         if (Object.keys(body).length > 0) {
           await updatePipelineDraft(currentForm._pipelineId, body);
@@ -129,10 +190,15 @@ export const PipelineBuilder: React.FC = () => {
 
   const isFinalStep = step === STEPS.length - 1;
   // The highest step the user has reached (allows clicking back on indicators)
-  const [maxStep, setMaxStep] = useState(0);
+  const [maxStep, setMaxStep] = useState(isEditMode ? STEPS.length - 1 : 0);
   React.useEffect(() => {
     if (step > maxStep) setMaxStep(step);
   }, [step]);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Show loading spinner while fetching pipeline in edit mode
+  if (loadingEdit) {
+    return <div style={{ padding: 60, textAlign: 'center', color: 'var(--muted)' }}>Loading pipeline…</div>;
+  }
 
   return (
     <div className="wizard">
