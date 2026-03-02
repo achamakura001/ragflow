@@ -257,6 +257,12 @@ export const Embeddings: React.FC = () => {
     setSavedConfigId(config.id);
     setTestResult(null);
     setModels(null);
+    // Auto-load models for the selected config
+    setFetchingModels(true);
+    getModels(config.id)
+      .then(r => setModels(r.items ?? []))
+      .catch(() => setModels([]))
+      .finally(() => setFetchingModels(false));
     // Scroll the form into view
     document.getElementById('emb-form')?.scrollIntoView({ behavior: 'smooth' });
   }
@@ -486,7 +492,7 @@ export const Embeddings: React.FC = () => {
                         </button>
                       )}
 
-                      {savedConfigId && testResult?.success && (
+                      {savedConfigId && (
                         <button
                           type="button"
                           className="btn btn-secondary"
@@ -507,7 +513,12 @@ export const Embeddings: React.FC = () => {
                 </div>
 
                 {/* ── Models panel (shown after load) ── */}
-                {models !== null && <ModelsPanel models={models} />}
+                {fetchingModels && (
+                  <div className="card" style={{ marginTop: 20 }}>
+                    <div className="vs-loading">Fetching models…</div>
+                  </div>
+                )}
+                {!fetchingModels && models !== null && <ModelsPanel models={models} />}
               </>
             )}
           </div>

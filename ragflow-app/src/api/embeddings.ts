@@ -138,5 +138,11 @@ export function testConfig(id: string): Promise<TestResult> {
 
 /** Fetch the list of models available for a saved config. */
 export function getModels(id: string): Promise<{ items: EmbeddingModel[]; total?: number }> {
-  return apiFetch(`/api/v1/embeddings/configs/${id}/models`, { method: 'POST' });
+  return apiFetch<unknown>(`/api/v1/embeddings/configs/${id}/models`)
+    .then((data) => {
+      // API may return { items: [...] } or a plain array
+      if (Array.isArray(data)) return { items: data as EmbeddingModel[], total: (data as EmbeddingModel[]).length };
+      const d = data as { items?: EmbeddingModel[]; total?: number };
+      return { items: d.items ?? [], total: d.total };
+    });
 }
